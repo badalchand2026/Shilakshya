@@ -162,3 +162,210 @@ export const loginUser = async ({ email, password }) => {
     },
   };
 };
+
+
+//refresh token
+
+export const refreshUserToken = async (refreshToken) => {
+  // 1. Check refresh token
+  if (!refreshToken) {
+    const error = new Error("Refresh token is required");
+    error.statusCode = 401;
+    throw error;
+  }
+
+  // 2. Verify refresh token
+  let decoded;
+
+  try {
+    decoded = jwt.verify(
+      refreshToken,
+      process.env.REFRESH_TOKEN_SECRET
+    );
+  } catch (error) {
+    const authError = new Error("Invalid or expired refresh token");
+    authError.statusCode = 401;
+    throw authError;
+  }
+
+  // 3. Validate token payload
+  if (!decoded.sub || !decoded.jti) {
+    const error = new Error("Invalid refresh token");
+    error.statusCode = 401;
+    throw error;
+  }
+
+  // 4. Hash the refresh token
+  const tokenHash = crypto
+    .createHash("sha256")
+    .update(refreshToken)
+    .digest("hex");
+
+  // 5. Find refresh token in database
+  const storedToken = await prisma.refreshToken.findUnique({
+    where: { tokenHash },
+  });
+
+  if (!storedToken) {
+    const error = new Error("Refresh token not found");
+    error.statusCode = 401;
+    throw error;
+  }
+
+  // 6. Check whether token belongs to the user in the JWT
+  if (storedToken.userId !== decoded.sub) {
+    const error = new Error("Invalid refresh token");
+    error.statusCode = 401;
+    throw error;
+  }
+
+  // 7. Detect reuse of an already-revoked token
+  if (storedToken.revokedAt) {
+    await prisma.refreshToken.updateMany({
+      where: {
+        userId: storedToken.userId,
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: new Date(),
+      },
+    });
+
+    const error = new Error(
+      "Refresh token reuse detected. Please log in again."
+    );
+    error.statusCode = 401;
+    throw error;
+  }
+
+  // 8. Check database expiration
+  const now = new Date();
+
+  if (storedToken.expiresAt <= now) {
+    await prisma.refreshToken.updateMany({
+      where: {
+        id: storedToken.id,
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: now,
+      },
+    });
+
+    const error = new Error("Refresh token has expired");
+    error.statusCode = 401;
+    throw error;
+  }
+
+  // 9. Check current user
+  const user = await prisma.user.findUnique({
+    where: {
+      id: decoded.sub,
+    },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      role: true,
+      isActive: true,
+    },
+  });
+
+  if (!user || !user.isActive) {
+    const error = new Error("User account is unavailable");
+    error.statusCode = 401;
+    throw error;
+  }
+
+  // 10. Generate new access token
+  const accessToken = jwt.sign(
+    {
+      sub: user.id,
+      role: user.role,
+    },
+    process.env.ACCESS_TOKEN_SECRET,
+    {
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN || "15m",
+    }
+  );
+
+  // 11. Generate new refresh token
+  const newRefreshTokenId = crypto.randomUUID();
+
+  const newRefreshToken = jwt.sign(
+    {
+      sub: user.id,
+      jti: newRefreshTokenId,
+    },
+    process.env.REFRESH_TOKEN_SECRET,
+    {
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || "7d",
+    }
+  );
+
+  // 12. Hash the new refresh token
+  const newTokenHash = crypto
+    .createHash("sha256")
+    .update(newRefreshToken)
+    .digest("hex");
+
+  const newDecodedToken = jwt.decode(newRefreshToken);
+  const newExpiresAt = new Date(newDecodedToken.exp * 1000);
+
+  // 13. Atomically revoke old token and save new token
+  const rotationResult = await prisma.$transaction(async (tx) => {
+    const revoked = await tx.refreshToken.updateMany({
+      where: {
+        id: storedToken.id,
+        revokedAt: null,
+        expiresAt: {
+          gt: now,
+        },
+      },
+      data: {
+        revokedAt: now,
+      },
+    });
+
+    // Another request may have already rotated this token
+    if (revoked.count !== 1) {
+      return false;
+    }
+
+    await tx.refreshToken.create({
+      data: {
+        tokenHash: newTokenHash,
+        userId: user.id,
+        expiresAt: newExpiresAt,
+      },
+    });
+
+    return true;
+  });
+
+  if (!rotationResult) {
+    // Reuse detected: revoke all remaining active refresh tokens
+    await prisma.refreshToken.updateMany({
+      where: {
+        userId: user.id,
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: new Date(),
+      },
+    });
+
+    const error = new Error(
+      "Refresh token reuse detected. Please log in again."
+    );
+    error.statusCode = 401;
+    throw error;
+  }
+
+  // 14. Return new tokens and safe user information
+  return {
+    accessToken,
+    refreshToken: newRefreshToken,
+    user,
+  };
+};

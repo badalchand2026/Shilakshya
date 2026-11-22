@@ -3,7 +3,7 @@ import { registerSchema } from "./auth.validation.js";
 import { registerUser } from "./auth.service.js";
 import { loginSchema } from "./auth.validation.js";
 import { loginUser } from "./auth.service.js";
-
+import { refreshUserToken } from "./auth.service.js";
 
 // register controller
 export const register = async (req, res) => {
@@ -109,4 +109,68 @@ export const getMe = async (req, res) => {
       user: req.user,
     },
   });
+};
+
+
+export const getAdminDashboard = async (req, res) => {
+  return res.status(200).json({
+    success: true,
+    message: "Welcome to the Admin Dashboard",
+    data: {
+      user: req.user,
+      dashboard: {
+        message: "You have access to admin resources",
+      },
+    },
+  });
+};
+
+
+// refresh token rotation
+
+export const refresh = async (req, res) => {
+  try {
+    // Get refresh token from HTTP-only cookie
+    const refreshToken = req.cookies?.refreshToken;
+
+    // Generate new tokens
+    const result = await refreshUserToken(refreshToken);
+
+    // Replace old refresh cookie with new refresh cookie
+    res.cookie("refreshToken", result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: "/api/auth",
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Access token refreshed successfully",
+      data: {
+        accessToken: result.accessToken,
+        user: result.user,
+      },
+    });
+
+  } catch (error) {
+    console.error("Refresh token error:", error.message);
+
+    // Remove invalid or rejected refresh cookie
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/api/auth",
+    });
+
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message:
+        error.statusCode
+          ? error.message
+          : "Something went wrong while refreshing the token",
+    });
+  }
 };
