@@ -1,5 +1,5 @@
 
-import { z } from "zod";
+import { email, z } from "zod";
 
 export const registerSchema = z.object({
   fullName: z
@@ -22,4 +22,10 @@ export const registerSchema = z.object({
       (value) => Buffer.byteLength(value, "utf8") <= 72,
       "Password is too long"
     ),
+});
+
+
+export const loginSchema = z.object({
+  email: z.string().trim().email("Please provide a valid email address").max(255).transform((value) => value.toLowerCase()),
+  password: z.string().min(1, "Password is required"),
 });
