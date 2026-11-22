@@ -29,3 +29,53 @@ export const loginSchema = z.object({
   email: z.string().trim().email("Please provide a valid email address").max(255).transform((value) => value.toLowerCase()),
   password: z.string().min(1, "Password is required"),
 });
+
+
+
+// forgot password
+
+export const forgotPasswordSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .email("Please provide a valid email address")
+    .toLowerCase(),
+});
+
+
+
+//verify otp
+
+export const verifyResetOtpSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .email("Please provide a valid email address")
+    .toLowerCase(),
+
+  otp: z
+    .string()
+    .length(6, "OTP must contain exactly 6 digits")
+    .regex(/^\d{6}$/, "OTP must contain only numbers"),
+});
+
+
+//reset password
+
+export const resetPasswordSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .email("Please provide a valid email address")
+    .toLowerCase(),
+
+  otp: z
+    .string()
+    .length(6, "OTP must contain exactly 6 digits")
+    .regex(/^\d{6}$/, "OTP must contain only numbers"),
+
+  newPassword: z
+    .string()
+    .min(8, "Password must be at least 8 characters long")
+    .max(128, "Password cannot exceed 128 characters"),
+});

@@ -1,20 +1,38 @@
-
 import { Router } from "express";
-import { getAdminDashboard, getMe, login, refresh, register } from "./auth.controller.js";
+
+import {
+  register,
+  login,
+  refresh,
+  logout,
+  getMe,
+  getAdminDashboard,
+  forgotPassword,
+  verifyResetOtp,
+  resetPassword,
+} from "./auth.controller.js";
+
 import { authenticate } from "../../middlewares/auth.middleware.js";
 import { authorizeRoles } from "../../middlewares/role.middleware.js";
 
 const router = Router();
 
-// POST /api/auth/register
 router.post("/register", register);
 router.post("/login", login);
 router.post("/refresh", refresh);
+router.post("/logout", logout);
 
-// Protected route
 router.get("/me", authenticate, getMe);
 
+router.get(
+  "/admin/dashboard",
+  authenticate,
+  authorizeRoles("ADMIN"),
+  getAdminDashboard
+);
 
-//Admin route
-router.get("/admin/dashboard", authenticate, authorizeRoles("ADMIN"), getAdminDashboard);
+router.post("/forgot-password", forgotPassword);
+router.post("/verify-reset-otp", verifyResetOtp);
+router.post("/reset-password", resetPassword);
+
 export default router;
