@@ -621,3 +621,58 @@ export const updateUserProfile = async (userId, fullName) => {
 
   return updatedUser;
 };
+
+
+
+//Change Password
+
+
+export const changeUserPassword = async (
+  userId,
+  currentPassword,
+  newPassword
+) => {
+  // Find the user
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user || !user.isActive) {
+    throw new Error("User not found or inactive");
+  }
+
+  // Verify current password
+  const isPasswordValid = await bcrypt.compare(
+    currentPassword,
+    user.password
+  );
+
+  if (!isPasswordValid) {
+    throw new Error("Current password is incorrect");
+  }
+
+  // Hash new password
+  const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+  // Update password and revoke all active refresh tokens
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    }),
+
+    prisma.refreshToken.updateMany({
+      where: {
+        userId,
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: new Date(),
+      },
+    }),
+  ]);
+
+  return {
+    message: "Password changed successfully. Please log in again.",
+  };
+};

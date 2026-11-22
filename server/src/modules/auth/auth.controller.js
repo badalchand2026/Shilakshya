@@ -30,7 +30,11 @@ import {
 } from "./auth.service.js";
 
 
+import { changePasswordSchema } from "./auth.validation.js";
 
+import {
+  changeUserPassword,
+} from "./auth.service.js";
 
 
 
@@ -387,6 +391,56 @@ export const updateProfile = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Unable to update profile",
+    });
+  }
+};
+
+
+// Change Password
+
+
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } =
+      changePasswordSchema.parse(req.body);
+
+    const result = await changeUserPassword(
+      req.user.id,
+      currentPassword,
+      newPassword
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: result.message,
+    });
+  } catch (error) {
+    if (error.name === "ZodError") {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide valid password details.",
+      });
+    }
+
+    if (error.message === "Current password is incorrect") {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    if (error.message === "User not found or inactive") {
+      return res.status(404).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    console.error("Change password error:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to change password.",
     });
   }
 };

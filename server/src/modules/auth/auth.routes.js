@@ -11,6 +11,7 @@ import {
   verifyResetOtp,
   resetPassword,
   updateProfile,
+  changePassword,
 } from "./auth.controller.js";
 
 import { authenticate } from "../../middlewares/auth.middleware.js";
@@ -36,9 +37,7 @@ router.post("/forgot-password", forgotPassword);
 router.post("/verify-reset-otp", verifyResetOtp);
 router.post("/reset-password", resetPassword);
 router.patch("/profile", authenticate, updateProfile);
-
-
-
+router.patch("/change-password", authenticate, changePassword);
 
 
 
