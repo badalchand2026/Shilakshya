@@ -23,6 +23,23 @@ import { resetPasswordSchema } from "./auth.validation.js";
 
 import { resetPassword as resetPasswordService } from "./auth.service.js";
 
+import { updateProfileSchema } from "./auth.validation.js";
+
+import {
+  updateUserProfile,
+} from "./auth.service.js";
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // register controller
@@ -333,6 +350,43 @@ export const resetPassword = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Unable to reset password. Please try again later.",
+    });
+  }
+};
+
+
+
+//Update Profile
+
+export const updateProfile = async (req, res) => {
+  try {
+    const { fullName } = updateProfileSchema.parse(req.body);
+
+    const updatedUser = await updateUserProfile(
+      req.user.id,
+      fullName
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      data: {
+        user: updatedUser,
+      },
+    });
+  } catch (error) {
+    if (error.name === "ZodError") {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid full name",
+      });
+    }
+
+    console.error("Update profile error:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to update profile",
     });
   }
 };

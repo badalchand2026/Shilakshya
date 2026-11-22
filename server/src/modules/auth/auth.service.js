@@ -596,3 +596,28 @@ export const resetPassword = async (email, otp, newPassword) => {
     message: "Password reset successfully. Please log in again.",
   };
 };
+
+
+
+//Update Profile
+export const updateUserProfile = async (userId, fullName) => {
+  const updatedUser = await prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      fullName,
+    },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      role: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  return updatedUser;
+};
