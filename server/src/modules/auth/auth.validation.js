@@ -91,3 +91,25 @@ export const updateProfileSchema = z.object({
     .min(2, "Name must contain at least 2 characters")
     .max(100, "Name cannot exceed 100 characters"),
 });
+
+
+
+
+//Change Password
+
+export const changePasswordSchema = z.object({
+  currentPassword: z
+    .string()
+    .min(1, "Current password is required"),
+
+  newPassword: z
+    .string()
+    .min(8, "New password must be at least 8 characters")
+    .max(128, "Password cannot exceed 128 characters"),
+}).refine(
+  (data) => data.currentPassword !== data.newPassword,
+  {
+    message: "New password must be different from current password",
+    path: ["newPassword"],
+  }
+);
