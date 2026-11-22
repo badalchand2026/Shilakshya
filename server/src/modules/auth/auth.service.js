@@ -1,10 +1,8 @@
-
 import bcrypt from "bcryptjs";
 import prisma from "../../config/prisma.js";
 import jwt from "jsonwebtoken";
 import crypto from "node:crypto";
-
-
+import { sendEmail } from "../../services/email.service.js";
 
 //register
 export const registerUser = async ({ fullName, email, password }) => {
@@ -367,5 +365,234 @@ export const refreshUserToken = async (refreshToken) => {
     accessToken,
     refreshToken: newRefreshToken,
     user,
+  };
+};
+
+
+
+//logout
+
+export const logoutUser = async (refreshToken) => {
+  // If no refresh token exists, there is nothing to revoke.
+  if (!refreshToken) {
+    return;
+  }
+
+  // Generate the SHA-256 hash of the refresh token.
+  const tokenHash = crypto
+    .createHash("sha256")
+    .update(refreshToken)
+    .digest("hex");
+
+  // Revoke the matching refresh token in the database.
+  await prisma.refreshToken.updateMany({
+    where: {
+      tokenHash,
+      revokedAt: null,
+    },
+    data: {
+      revokedAt: new Date(),
+    },
+  });
+};
+
+
+
+
+// send email
+
+
+export const forgotPassword = async (email) => {
+  // Find user by email
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  // Do not reveal whether an email is registered
+  if (!user || !user.isActive) {
+    return {
+      message: "If an account exists with this email, an OTP will be sent.",
+    };
+  }
+
+  // Generate a secure 6-digit OTP
+  const otp = crypto.randomInt(100000, 1000000).toString();
+
+  // Hash OTP before storing it
+  const otpHash = await bcrypt.hash(otp, 10);
+
+  // OTP expires after 5 minutes
+  const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+  // Invalidate previous unused OTPs
+  await prisma.passwordResetOtp.updateMany({
+    where: {
+      userId: user.id,
+      usedAt: null,
+    },
+    data: {
+      usedAt: new Date(),
+    },
+  });
+
+  // Store hashed OTP
+  await prisma.passwordResetOtp.create({
+    data: {
+      otpHash,
+      userId: user.id,
+      expiresAt,
+    },
+  });
+
+  // Send OTP to user's email
+  await sendEmail({
+    to: user.email,
+    subject: "Shilakshya - Password Reset OTP",
+    html: `
+      <div style="font-family: Arial, sans-serif; padding: 20px;">
+        <h2>Password Reset Request</h2>
+        <p>Hello ${user.fullName},</p>
+        <p>Your password reset OTP is:</p>
+        <h1 style="letter-spacing: 8px;">${otp}</h1>
+        <p>This OTP expires in 5 minutes.</p>
+        <p>If you did not request this, please ignore this email.</p>
+      </div>
+    `,
+  });
+
+  return {
+    message: "If an account exists with this email, an OTP will be sent.",
+  };
+};
+
+
+
+
+
+export const verifyResetOtp = async (email, otp) => {
+  // Find the user
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (!user || !user.isActive) {
+    throw new Error("Invalid or expired OTP");
+  }
+
+  // Find the latest OTP for this user
+  const resetOtp = await prisma.passwordResetOtp.findFirst({
+    where: {
+      userId: user.id,
+      usedAt: null,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  if (!resetOtp) {
+    throw new Error("Invalid or expired OTP");
+  }
+
+  // Check OTP expiration
+  if (resetOtp.expiresAt < new Date()) {
+    throw new Error("Invalid or expired OTP");
+  }
+
+  // Compare submitted OTP with stored hash
+  const isOtpValid = await bcrypt.compare(
+    otp,
+    resetOtp.otpHash
+  );
+
+  if (!isOtpValid) {
+    throw new Error("Invalid or expired OTP");
+  }
+
+  return {
+    message: "OTP verified successfully",
+  };
+};
+
+
+
+
+
+export const resetPassword = async (email, otp, newPassword) => {
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (!user || !user.isActive) {
+    throw new Error("Invalid or expired OTP");
+  }
+
+  // Find the latest unused OTP
+  const resetOtp = await prisma.passwordResetOtp.findFirst({
+    where: {
+      userId: user.id,
+      usedAt: null,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  if (!resetOtp || resetOtp.expiresAt <= new Date()) {
+    throw new Error("Invalid or expired OTP");
+  }
+
+  // Verify the OTP again
+  const isOtpValid = await bcrypt.compare(
+    otp,
+    resetOtp.otpHash
+  );
+
+  if (!isOtpValid) {
+    throw new Error("Invalid or expired OTP");
+  }
+
+  // Hash the new password
+  const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+  // Update password, consume OTP and revoke sessions atomically
+  await prisma.$transaction(async (tx) => {
+    const consumedOtp = await tx.passwordResetOtp.updateMany({
+      where: {
+        id: resetOtp.id,
+        usedAt: null,
+        expiresAt: {
+          gt: new Date(),
+        },
+      },
+      data: {
+        usedAt: new Date(),
+      },
+    });
+
+    if (consumedOtp.count !== 1) {
+      throw new Error("Invalid or expired OTP");
+    }
+
+    await tx.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+      },
+    });
+
+    await tx.refreshToken.updateMany({
+      where: {
+        userId: user.id,
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: new Date(),
+      },
+    });
+  });
+
+  return {
+    message: "Password reset successfully. Please log in again.",
   };
 };

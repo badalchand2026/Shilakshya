@@ -1,9 +1,29 @@
 
 import { registerSchema } from "./auth.validation.js";
-import { registerUser } from "./auth.service.js";
 import { loginSchema } from "./auth.validation.js";
-import { loginUser } from "./auth.service.js";
-import { refreshUserToken } from "./auth.service.js";
+import { forgotPasswordSchema } from "./auth.validation.js";
+
+
+import {
+  registerUser,
+  loginUser,
+  refreshUserToken,
+  logoutUser,
+} from "./auth.service.js";
+
+
+import {
+  forgotPassword as forgotPasswordService,
+} from "./auth.service.js";
+
+import { verifyResetOtpSchema } from "./auth.validation.js";
+import { verifyResetOtp as verifyResetOtpService } from "./auth.service.js";
+
+import { resetPasswordSchema } from "./auth.validation.js";
+
+import { resetPassword as resetPasswordService } from "./auth.service.js";
+
+
 
 // register controller
 export const register = async (req, res) => {
@@ -171,6 +191,148 @@ export const refresh = async (req, res) => {
         error.statusCode
           ? error.message
           : "Something went wrong while refreshing the token",
+    });
+  }
+};
+
+
+//Logout
+
+
+export const logout = async (req, res) => {
+  try {
+    const refreshToken = req.cookies?.refreshToken;
+
+    // Revoke the current refresh token.
+    await logoutUser(refreshToken);
+
+    // Clear the refresh token cookie.
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/api/auth",
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  } catch (error) {
+    console.error("Logout error:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong while logging out",
+    });
+  }
+};
+
+
+
+
+// forgot password
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = forgotPasswordSchema.parse(req.body);
+
+    const result = await forgotPasswordService(email);
+
+    return res.status(200).json({
+      success: true,
+      message: result.message,
+    });
+  } catch (error) {
+    if (error.name === "ZodError") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid email address",
+      });
+    }
+
+    console.error("Forgot password error:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to process your request. Please try again later.",
+    });
+  }
+};
+
+
+
+
+export const verifyResetOtp = async (req, res) => {
+  try {
+    const { email, otp } = verifyResetOtpSchema.parse(req.body);
+
+    const result = await verifyResetOtpService(email, otp);
+
+    return res.status(200).json({
+      success: true,
+      message: result.message,
+    });
+  } catch (error) {
+    if (error.name === "ZodError") {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid email and 6-digit OTP",
+      });
+    }
+
+    if (error.message === "Invalid or expired OTP") {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    console.error("Verify reset OTP error:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to verify OTP. Please try again later.",
+    });
+  }
+};
+
+
+
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = resetPasswordSchema.parse(req.body);
+
+    const result = await resetPasswordService(
+      email,
+      otp,
+      newPassword
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: result.message,
+    });
+  } catch (error) {
+    if (error.name === "ZodError") {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide valid email, OTP and password.",
+      });
+    }
+
+    if (error.message === "Invalid or expired OTP") {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    console.error("Reset password error:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to reset password. Please try again later.",
     });
   }
 };
