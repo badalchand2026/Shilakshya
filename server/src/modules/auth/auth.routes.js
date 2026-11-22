@@ -17,11 +17,20 @@ import {
 import { authenticate } from "../../middlewares/auth.middleware.js";
 import { authorizeRoles } from "../../middlewares/role.middleware.js";
 
+import {
+  registerLimiter,
+  loginLimiter,
+  refreshLimiter,
+  forgotPasswordLimiter,
+  verifyResetOtpLimiter,
+  resetPasswordLimiter,
+} from "../../middlewares/rate-limit.middleware.js";
+
 const router = Router();
 
-router.post("/register", register);
-router.post("/login", login);
-router.post("/refresh", refresh);
+router.post("/register", registerLimiter, register);
+router.post("/login", loginLimiter, login);
+router.post("/refresh", refreshLimiter, refresh);
 router.post("/logout", logout);
 
 router.get("/me", authenticate, getMe);
@@ -33,9 +42,9 @@ router.get(
   getAdminDashboard
 );
 
-router.post("/forgot-password", forgotPassword);
-router.post("/verify-reset-otp", verifyResetOtp);
-router.post("/reset-password", resetPassword);
+router.post("/forgot-password", forgotPasswordLimiter, forgotPassword);
+router.post("/verify-reset-otp", verifyResetOtpLimiter, verifyResetOtp);
+router.post("/reset-password", resetPasswordLimiter, resetPassword);
 router.patch("/profile", authenticate, updateProfile);
 router.patch("/change-password", authenticate, changePassword);
 
