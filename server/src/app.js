@@ -5,11 +5,9 @@ import authRoutes from "./modules/auth/auth.routes.js";
 import { globalApiLimiter } from "./middlewares/rate-limit.middleware.js";
 import contactRoutes from "./modules/contact/contact.routes.js";
 import usersRoutes from "./modules/users/users.routes.js";
-
 import blogCategoryRoutes from "./modules/blog-categories/blog-category.routes.js";
-
 import blogAdminRoutes from "./modules/blogs/blog.admin.routes.js";
-
+import blogTagRoutes from "./modules/blog-tags/blog-tag.routes.js";
 const app = express();
 
 // Middleware
@@ -35,6 +33,9 @@ app.use("/api/contact", contactRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/blogs/admin", blogAdminRoutes);
 app.use("/api/blog-categories/admin", blogCategoryRoutes)
+app.use("/api/blog-tags/admin", blogTagRoutes);
+
+
 
 // Health check API
 app.get("/api/health", (req, res) => {
