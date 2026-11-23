@@ -1,4 +1,8 @@
-import { getAllContactInquiries, getContactInquiryById,} from "./contact.admin.service.js";
+import { getAllContactInquiries, getContactInquiryById, updateContactInquiryStatus, deleteContactInquiry} from "./contact.admin.service.js";
+
+
+
+
 export const getAllContactInquiriesController = async (req, res) => {
   try {
     // Read query parameters.
@@ -99,6 +103,111 @@ export const getContactInquiryByIdController = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to retrieve contact inquiry.",
+    });
+  }
+};
+
+
+
+
+export const updateContactInquiryStatusController = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    // Validate UUID
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+    if (!uuidRegex.test(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid contact inquiry ID.",
+      });
+    }
+
+    // Validate status
+    const allowedStatuses = [
+      "NEW",
+      "IN_PROGRESS",
+      "CONTACTED",
+      "COMPLETED",
+      "REJECTED",
+    ];
+
+    if (!status || !allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid inquiry status.",
+        allowedStatuses,
+      });
+    }
+
+    const inquiry = await updateContactInquiryStatus(id, status);
+
+    return res.status(200).json({
+      success: true,
+      message: "Contact inquiry status updated successfully.",
+      data: {
+        inquiry,
+      },
+    });
+  } catch (error) {
+    if (error.code === "P2025") {
+      return res.status(404).json({
+        success: false,
+        message: "Contact inquiry not found.",
+      });
+    }
+
+    console.error("Update contact inquiry status error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update contact inquiry status.",
+    });
+  }
+};
+
+
+
+export const deleteContactInquiryController = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validate UUID
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+    if (!uuidRegex.test(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid contact inquiry ID.",
+      });
+    }
+
+    const inquiry = await deleteContactInquiry(id);
+
+    return res.status(200).json({
+      success: true,
+      message: "Contact inquiry deleted successfully.",
+      data: {
+        inquiry,
+      },
+    });
+  } catch (error) {
+    if (error.code === "P2025") {
+      return res.status(404).json({
+        success: false,
+        message: "Contact inquiry not found.",
+      });
+    }
+
+    console.error("Delete contact inquiry error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete contact inquiry.",
     });
   }
 };

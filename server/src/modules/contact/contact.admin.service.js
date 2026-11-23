@@ -1,6 +1,11 @@
 
 import prisma from "../../config/prisma.js";
 
+
+
+
+
+// get all
 export const getAllContactInquiries = async ({
   page = 1,
   limit = 10,
@@ -75,7 +80,7 @@ export const getAllContactInquiries = async ({
 };
 
 
-
+//get by id
 export const getContactInquiryById = async (id) => {
   const inquiry = await prisma.contactInquiry.findUnique({
     where: { id },
@@ -91,6 +96,49 @@ export const getContactInquiryById = async (id) => {
       status: true,
       createdAt: true,
       updatedAt: true,
+    },
+  });
+
+  return inquiry;
+};
+
+
+
+// update contact status
+
+export const updateContactInquiryStatus = async (id, status) => {
+  const inquiry = await prisma.contactInquiry.update({
+    where: { id },
+    data: {
+      status,
+    },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      serviceRequired: true,
+      projectType: true,
+      status: true,
+      updatedAt: true,
+    },
+  });
+
+  return inquiry;
+};
+
+
+
+// delete contact inquiry
+
+
+export const deleteContactInquiry = async (id) => {
+  const inquiry = await prisma.contactInquiry.delete({
+    where: { id },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      status: true,
     },
   });
 
