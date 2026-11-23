@@ -4,7 +4,7 @@ import cookieParser from "cookie-parser";
 import authRoutes from "./modules/auth/auth.routes.js";
 import { globalApiLimiter } from "./middlewares/rate-limit.middleware.js";
 import contactRoutes from "./modules/contact/contact.routes.js";
-
+import usersRoutes from "./modules/users/users.routes.js";
 
 const app = express();
 
@@ -26,8 +26,9 @@ app.use("/api", globalApiLimiter);
 
 
 // Authentication routes
-app.use("/api/auth", authRoutes)
+app.use("/api/auth", authRoutes);
 app.use("/api/contact", contactRoutes);
+app.use("/api/users", usersRoutes)
 
 // Health check API
 app.get("/api/health", (req, res) => {
