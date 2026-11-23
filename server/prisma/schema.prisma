@@ -21,6 +21,11 @@ enum InquiryStatus {
   REJECTED
 }
 
+enum BlogStatus {
+  DRAFT
+  PUBLISHED
+}
+
 // User account
 model User {
   id       String @id @default(uuid()) @db.Uuid
@@ -36,6 +41,7 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  blogs     Blog[]
 
   @@map("users")
 }
@@ -95,4 +101,95 @@ model ContactInquiry {
   @@index([status])
   @@index([createdAt])
   @@map("contact_inquiries")
+}
+
+model Blog {
+  id String @id @default(uuid()) @db.Uuid
+
+  // Basic information
+  title         String  @db.VarChar(255)
+  slug          String  @unique @db.VarChar(255)
+  excerpt       String? @db.Text
+  featuredImage String? @db.VarChar(500)
+  imageAlt      String? @db.VarChar(255)
+
+  // Rich text editor content
+  content Json?
+
+  // SEO information
+  metaTitle       String? @db.VarChar(255)
+  metaDescription String? @db.VarChar(500)
+  focusKeyword    String? @db.VarChar(255)
+  canonicalUrl    String? @db.VarChar(500)
+
+  // Publishing information
+  status      BlogStatus @default(DRAFT)
+  isFeatured  Boolean    @default(false)
+  readingTime Int        @default(1)
+  publishedAt DateTime?
+
+  // Author information
+  authorId   String? @db.Uuid
+  authorName String? @db.VarChar(100)
+
+  author User? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  // Category relationship
+  categoryId String?       @db.Uuid
+  category   BlogCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  // Tags relationship
+  tags BlogTagRelation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([publishedAt])
+  @@index([categoryId])
+  @@index([authorId])
+  @@index([isFeatured])
+  @@index([createdAt])
+  @@map("blogs")
+}
+
+// Blog categories
+model BlogCategory {
+  id          String  @id @default(uuid()) @db.Uuid
+  name        String  @unique @db.VarChar(100)
+  slug        String  @unique @db.VarChar(150)
+  description String? @db.Text
+
+  blogs Blog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("blog_categories")
+}
+
+// Blog tags
+model BlogTag {
+  id   String @id @default(uuid()) @db.Uuid
+  name String @unique @db.VarChar(100)
+  slug String @unique @db.VarChar(150)
+
+  blogs BlogTagRelation[]
+
+  createdAt DateTime @default(now())
+
+  @@map("blog_tags")
+}
+
+// Blog and tag relationship
+model BlogTagRelation {
+  blogId String @db.Uuid
+  tagId  String @db.Uuid
+
+  blog Blog    @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  tag  BlogTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([blogId, tagId])
+  @@index([tagId])
+  @@map("blog_tag_relations")
 }
