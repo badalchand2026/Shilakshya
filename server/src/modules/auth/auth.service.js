@@ -4,6 +4,12 @@ import jwt from "jsonwebtoken";
 import crypto from "node:crypto";
 import { sendEmail } from "../../services/email.service.js";
 
+
+
+
+
+
+
 //register
 export const registerUser = async ({ fullName, email, password }) => {
   // Check whether the email is already registered
@@ -367,6 +373,9 @@ export const refreshUserToken = async (refreshToken) => {
     user,
   };
 };
+
+
+
 
 
 
