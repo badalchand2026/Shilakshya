@@ -1,5 +1,7 @@
-
 import { z } from "zod";
+
+
+
 
 // Create Blog Validation
 export const createBlogSchema = z.object({
@@ -105,3 +107,15 @@ export const createBlogSchema = z.object({
     .optional()
     .default([]),
 });
+
+
+
+// Update Blog Validation
+export const updateBlogSchema = createBlogSchema
+  .partial()
+  .refine(
+    (data) => Object.keys(data).length > 0,
+    {
+      message: "At least one field must be provided to update the blog.",
+    }
+  );
