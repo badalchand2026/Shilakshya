@@ -23,7 +23,7 @@ import publicProjectCategoryRoutes from "./modules/public-project-categories/pub
 import galleryCategoryRoutes from "./modules/gallery-categories/gallery-category.routes.js";
 import galleryRoutes from "./modules/gallery/gallery.routes.js";
 import publicGalleryRoutes from "./modules/public-gallery/public-gallery.routes.js";
-
+import mediaCoverageRoutes from "./modules/media-coverage/media-coverage.routes.js";
 
 
 const app = express();
@@ -88,13 +88,12 @@ app.use("/api/projects/admin", projectAdminRoutes);
 app.use("/api/projects", publicProjectRoutes);
 app.use("/api/project-categories", publicProjectCategoryRoutes);
 app.use("/api/gallery-categories/admin", galleryCategoryRoutes);
-
 app.use("/api/gallery/admin", galleryRoutes);
 
 
 
 app.use("/api/gallery", publicGalleryRoutes);
-
+app.use("/api/media-coverage/admin", mediaCoverageRoutes);
 
 
 // Health Check
