@@ -15,6 +15,9 @@ import blogCategoryRoutes from "./modules/blog-categories/blog-category.routes.j
 import blogAdminRoutes from "./modules/blogs/blog.admin.routes.js";
 import blogTagRoutes from "./modules/blog-tags/blog-tag.routes.js";
 import publicBlogRoutes from "./modules/public-blogs/public-blog.routes.js";
+import projectCategoryRoutes from "./modules/project-categories/project-category.routes.js";
+
+
 
 const app = express();
 
@@ -68,6 +71,9 @@ app.use("/api/blog-categories/admin", blogCategoryRoutes);
 
 // Blog tag routes
 app.use("/api/blog-tags/admin", blogTagRoutes);
+
+// Project category routes
+app.use("/api/project-categories/admin", projectCategoryRoutes);
 
 // Health Check
 app.get("/api/health", (req, res) => {

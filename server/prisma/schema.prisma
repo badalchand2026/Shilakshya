@@ -193,3 +193,52 @@ model BlogTagRelation {
   @@index([tagId])
   @@map("blog_tag_relations")
 }
+
+// Project categories
+model ProjectCategory {
+  id          String  @id @default(uuid()) @db.Uuid
+  name        String  @unique @db.VarChar(100)
+  slug        String  @unique @db.VarChar(150)
+  description String? @db.Text
+
+  projects Project[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("project_categories")
+}
+
+// Projects
+model Project {
+  id String @id @default(uuid()) @db.Uuid
+
+  // Basic project information
+  title       String @db.VarChar(255)
+  slug        String @unique @db.VarChar(255)
+  description String @db.Text
+
+  // Project image
+  imageUrl String  @db.VarChar(500)
+  imageAlt String? @db.VarChar(255)
+
+  // Project completion date
+  completionDate DateTime @db.Date
+
+  // Project category
+  categoryId String          @db.Uuid
+  category   ProjectCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  // Display management
+  sortOrder   Int     @default(0)
+  isPublished Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([categoryId])
+  @@index([sortOrder])
+  @@index([isPublished])
+  @@index([completionDate])
+  @@map("projects")
+}
