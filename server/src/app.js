@@ -20,7 +20,7 @@ import path from "path";
 import projectAdminRoutes from "./modules/projects/project.routes.js";
 import publicProjectRoutes from "./modules/public-projects/public-project.routes.js";
 import publicProjectCategoryRoutes from "./modules/public-project-categories/public-project-category.routes.js";
-
+import galleryCategoryRoutes from "./modules/gallery-categories/gallery-category.routes.js";
 
 
 const app = express();
@@ -85,7 +85,7 @@ app.use("/api/projects/admin", projectAdminRoutes);
 app.use("/api/projects", publicProjectRoutes);
 app.use("/api/project-categories", publicProjectCategoryRoutes);
 
-
+app.use("/api/gallery-categories/admin", galleryCategoryRoutes);
 
 
 
