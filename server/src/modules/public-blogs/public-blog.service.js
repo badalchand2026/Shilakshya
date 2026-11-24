@@ -1,19 +1,53 @@
 
 import prisma from "../../config/prisma.js";
 
-// Common blog details returned to website visitors
-const publicBlogInclude = {
+// Fields required for blog cards on the public website
+const publicBlogListSelect = {
+    id: true,
+    title: true,
+    slug: true,
+    excerpt: true,
+    featuredImage: true,
+    imageAlt: true,
+    isFeatured: true,
+    readingTime: true,
+    publishedAt: true,
+
     author: {
         select: {
             fullName: true,
         },
     },
-    category: true,
-    tags: {
-        include: {
-            tag: true,
+
+    category: {
+        select: {
+            id: true,
+            name: true,
+            slug: true,
         },
     },
+
+    tags: {
+        select: {
+            tag: {
+                select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                },
+            },
+        },
+    },
+};
+
+// Additional fields required when viewing a single blog
+const publicBlogDetailSelect = {
+    ...publicBlogListSelect,
+    content: true,
+    metaTitle: true,
+    metaDescription: true,
+    focusKeyword: true,
+    canonicalUrl: true,
 };
 
 // Get all published blogs with search and filters
@@ -74,7 +108,7 @@ export const getPublicBlogs = async (query) => {
                 { publishedAt: "desc" },
                 { createdAt: "desc" },
             ],
-            include: publicBlogInclude,
+            select: publicBlogListSelect,
         }),
 
         prisma.blog.count({
@@ -104,7 +138,7 @@ export const getPublicBlogBySlug = async (slug) => {
             slug,
             status: "PUBLISHED",
         },
-        include: publicBlogInclude,
+        select: publicBlogDetailSelect,
     });
 
     if (!blog) {
@@ -116,20 +150,28 @@ export const getPublicBlogBySlug = async (slug) => {
 
 // Get featured published blogs
 export const getFeaturedBlogs = async (limit = 5) => {
-    const blogs = await prisma.blog.findMany({
-        where: {
-            status: "PUBLISHED",
-            isFeatured: true,
-        },
-        take: limit,
-        orderBy: {
-            publishedAt: "desc",
-        },
-        include: publicBlogInclude,
-    });
+    const where = {
+        status: "PUBLISHED",
+        isFeatured: true,
+    };
+
+    const [blogs, totalBlogs] = await prisma.$transaction([
+        prisma.blog.findMany({
+            where,
+            take: limit,
+            orderBy: {
+                publishedAt: "desc",
+            },
+            select: publicBlogListSelect,
+        }),
+
+        prisma.blog.count({
+            where,
+        }),
+    ]);
 
     return {
         blogs,
-        totalBlogs: blogs.length,
+        totalBlogs,
     };
 };
