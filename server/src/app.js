@@ -16,24 +16,26 @@ import blogAdminRoutes from "./modules/blogs/blog.admin.routes.js";
 import blogTagRoutes from "./modules/blog-tags/blog-tag.routes.js";
 import publicBlogRoutes from "./modules/public-blogs/public-blog.routes.js";
 import projectCategoryRoutes from "./modules/project-categories/project-category.routes.js";
-
+import path from "path";
+import projectAdminRoutes from "./modules/projects/project.routes.js";
 
 
 const app = express();
 
+// Serve uploaded files
+const uploadsPath = path.resolve("uploads");
+
+app.use("/uploads", express.static(uploadsPath));
+
 
 // Global Middlewares
-
-
 app.use(express.json());
-
 app.use(
     cors({
         origin: "http://localhost:3000",
         credentials: true,
     })
 );
-
 app.use(cookieParser());
 
 // Apply rate limiting to all API routes
@@ -74,6 +76,10 @@ app.use("/api/blog-tags/admin", blogTagRoutes);
 
 // Project category routes
 app.use("/api/project-categories/admin", projectCategoryRoutes);
+
+// Project Management Routes
+app.use("/api/projects/admin", projectAdminRoutes);
+
 
 // Health Check
 app.get("/api/health", (req, res) => {
