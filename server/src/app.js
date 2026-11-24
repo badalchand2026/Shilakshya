@@ -22,6 +22,9 @@ import publicProjectRoutes from "./modules/public-projects/public-project.routes
 import publicProjectCategoryRoutes from "./modules/public-project-categories/public-project-category.routes.js";
 import galleryCategoryRoutes from "./modules/gallery-categories/gallery-category.routes.js";
 import galleryRoutes from "./modules/gallery/gallery.routes.js";
+import publicGalleryRoutes from "./modules/public-gallery/public-gallery.routes.js";
+
+
 
 const app = express();
 
@@ -87,6 +90,12 @@ app.use("/api/project-categories", publicProjectCategoryRoutes);
 app.use("/api/gallery-categories/admin", galleryCategoryRoutes);
 
 app.use("/api/gallery/admin", galleryRoutes);
+
+
+
+app.use("/api/gallery", publicGalleryRoutes);
+
+
 
 // Health Check
 app.get("/api/health", (req, res) => {
