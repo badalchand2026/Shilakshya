@@ -1,4 +1,6 @@
+import path from "path";
 import fs from "fs/promises";
+
 import {
     createProjectSchema,
     updateProjectSchema
@@ -8,10 +10,10 @@ import {
     createProject,
     getAllAdminProjects,
     getAdminProjectById,
-    updateProject
+    updateProject,
+    deleteProject,
 } from "./project.service.js";
 
-import path from "path";
 
 
 
@@ -162,100 +164,146 @@ export const getAdminProjectByIdController = async (req, res) => {
 
 
 
-// Update project
-export const updateProject = async (projectId, projectData) => {
-    // 1. Check whether the project exists
-    const existingProject = await prisma.project.findUnique({
-        where: { id: projectId },
-    });
-
-    if (!existingProject) {
-        throw createError(
-            "Project not found.",
-            404,
-            "PROJECT_NOT_FOUND"
-        );
+const removeOldProjectImage = async (imageUrl) => {
+    if (!imageUrl || !imageUrl.startsWith("/uploads/projects/")) {
+        return;
     }
 
-    const {
-        title,
-        slug,
-        description,
-        imageAlt,
-        completionDate,
-        categoryId,
-        sortOrder,
-        isPublished,
-        imageUrl,
-    } = projectData;
+    const filename = path.basename(imageUrl);
+    const imagePath = path.resolve("uploads/projects", filename);
 
-    // 2. Check duplicate slug
-    if (slug && slug !== existingProject.slug) {
-        const duplicateSlug = await prisma.project.findUnique({
-            where: { slug },
-            select: { id: true },
-        });
-
-        if (duplicateSlug) {
-            throw createError(
-                "A project with this slug already exists.",
-                409,
-                "DUPLICATE_SLUG"
-            );
+    try {
+        await fs.unlink(imagePath);
+    } catch (error) {
+        if (error.code !== "ENOENT") {
+            console.error("Failed to delete old project image:", error);
         }
     }
+};
 
-    // 3. Check category if it is being changed
-    if (categoryId && categoryId !== existingProject.categoryId) {
-        const category = await prisma.projectCategory.findUnique({
-            where: { id: categoryId },
-            select: { id: true },
-        });
 
-        if (!category) {
-            throw createError(
-                "Project category not found.",
-                404,
-                "CATEGORY_NOT_FOUND"
-            );
+
+export const updateProjectController = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // 1. Validate project ID
+        const uuidRegex =
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+        if (!uuidRegex.test(id)) {
+            await removeUploadedFile(req.file);
+
+            return res.status(400).json({
+                success: false,
+                message: "Invalid project ID.",
+            });
         }
-    }
 
-    // 4. Prepare only the fields provided for update
-    const updateData = {};
+        // 2. Convert multipart form values
+        const projectData = normalizeProjectData(req.body);
 
-    if (title !== undefined) updateData.title = title;
-    if (slug !== undefined) updateData.slug = slug;
-    if (description !== undefined) updateData.description = description;
-    if (imageAlt !== undefined) updateData.imageAlt = imageAlt;
-    if (categoryId !== undefined) updateData.categoryId = categoryId;
-    if (sortOrder !== undefined) updateData.sortOrder = sortOrder;
-    if (isPublished !== undefined) updateData.isPublished = isPublished;
-    if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+        // 3. Validate project information
+        let validatedData = {};
 
-    if (completionDate !== undefined) {
-        updateData.completionDate = new Date(
-            `${completionDate}T00:00:00.000Z`
+        // An image-only update is also allowed
+        if (Object.keys(projectData).length > 0) {
+            const validation = updateProjectSchema.safeParse(projectData);
+
+            if (!validation.success) {
+                await removeUploadedFile(req.file);
+
+                return res.status(400).json({
+                    success: false,
+                    message: "Validation failed.",
+                    errors: validation.error.issues.map((issue) => ({
+                        field: issue.path.join("."),
+                        message: issue.message,
+                    })),
+                });
+            }
+
+            validatedData = validation.data;
+        } else if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "Please provide at least one field or a new image.",
+            });
+        }
+
+        // 4. Add the new image URL if an image was uploaded
+        if (req.file) {
+            validatedData.imageUrl =
+                `/uploads/projects/${req.file.filename}`;
+        }
+
+        // 5. Update the project
+        const { updatedProject, oldImageUrl } = await updateProject(
+            id,
+            validatedData
         );
-    }
 
-    // 5. Update project in database
-    const updatedProject = await prisma.project.update({
-        where: { id: projectId },
-        data: updateData,
-        include: {
-            category: {
-                select: {
-                    id: true,
-                    name: true,
-                    slug: true,
-                },
+        // 6. Delete the previous image after successful database update
+        if (oldImageUrl) {
+            await removeOldProjectImage(oldImageUrl);
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Project updated successfully.",
+            data: {
+                project: updatedProject,
             },
-        },
-    });
+        });
+    } catch (error) {
+        // Delete newly uploaded image if the update fails
+        await removeUploadedFile(req.file);
 
-    return {
-        updatedProject,
-        oldImageUrl: imageUrl ? existingProject.imageUrl : null,
-    };
+        console.error("Update project error:", error);
+
+        return res.status(error.statusCode || 500).json({
+            success: false,
+            message: error.message || "Failed to update project.",
+        });
+    }
+};
+
+
+
+export const deleteProjectController = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // 1. Validate project ID
+        const uuidRegex =
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+        if (!uuidRegex.test(id)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid project ID.",
+            });
+        }
+
+        // 2. Delete project from database
+        const deletedProject = await deleteProject(id);
+
+        // 3. Delete associated image from local storage
+        await removeOldProjectImage(deletedProject.imageUrl);
+
+        return res.status(200).json({
+            success: true,
+            message: "Project deleted successfully.",
+            data: {
+                projectId: deletedProject.deletedProjectId,
+            },
+        });
+    } catch (error) {
+        console.error("Delete project error:", error);
+
+        return res.status(error.statusCode || 500).json({
+            success: false,
+            message: error.message || "Failed to delete project.",
+        });
+    }
 };
