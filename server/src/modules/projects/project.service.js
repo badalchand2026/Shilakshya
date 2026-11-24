@@ -134,8 +134,6 @@ export const getAdminProjectById = async (projectId) => {
 
 
 
-//update Projct
-
 // Update project
 export const updateProject = async (projectId, projectData) => {
     // 1. Check whether the project exists
@@ -231,5 +229,38 @@ export const updateProject = async (projectId, projectData) => {
     return {
         updatedProject,
         oldImageUrl: imageUrl ? existingProject.imageUrl : null,
+    };
+};
+
+
+
+// Delete project
+export const deleteProject = async (projectId) => {
+    // 1. Check whether the project exists
+    const existingProject = await prisma.project.findUnique({
+        where: { id: projectId },
+        select: {
+            id: true,
+            imageUrl: true,
+        },
+    });
+
+    if (!existingProject) {
+        throw createError(
+            "Project not found.",
+            404,
+            "PROJECT_NOT_FOUND"
+        );
+    }
+
+    // 2. Delete the project from the database
+    await prisma.project.delete({
+        where: { id: projectId },
+    });
+
+    // 3. Return the deleted project's image URL
+    return {
+        deletedProjectId: existingProject.id,
+        imageUrl: existingProject.imageUrl,
     };
 };
