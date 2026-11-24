@@ -18,7 +18,7 @@ import publicBlogRoutes from "./modules/public-blogs/public-blog.routes.js";
 import projectCategoryRoutes from "./modules/project-categories/project-category.routes.js";
 import path from "path";
 import projectAdminRoutes from "./modules/projects/project.routes.js";
-
+import publicProjectRoutes from "./modules/public-projects/public-project.routes.js";
 
 const app = express();
 
@@ -79,7 +79,7 @@ app.use("/api/project-categories/admin", projectCategoryRoutes);
 
 // Project Management Routes
 app.use("/api/projects/admin", projectAdminRoutes);
-
+app.use("/api/projects", publicProjectRoutes);
 
 // Health Check
 app.get("/api/health", (req, res) => {
