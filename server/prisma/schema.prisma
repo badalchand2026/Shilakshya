@@ -357,3 +357,24 @@ model Testimonial {
   @@index([rating])
   @@map("testimonials")
 }
+
+model Service {
+  id               String   @id @default(uuid()) @db.Uuid
+  title            String   @db.VarChar(200)
+  slug             String   @unique @db.VarChar(220)
+  shortDescription String   @db.VarChar(500)
+  description      String   @db.Text
+  category         String   @db.VarChar(100)
+  benefits         String[] @default([])
+  imageUrl         String   @db.VarChar(500)
+  imageAlt         String?  @db.VarChar(255)
+  sortOrder        Int      @default(0)
+  isPublished      Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([sortOrder])
+  @@index([isPublished])
+  @@index([category])
+  @@map("services")
+}

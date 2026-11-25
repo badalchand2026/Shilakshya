@@ -27,7 +27,8 @@ import publicTeamMemberRoutes from "./modules/team-members/public-team-member.ro
 import testimonialRoutes from "./modules/testimonials/testimonial.routes.js";
 import publicTestimonialRoutes from "./modules/testimonials/public-testimonial.routes.js";
 
-
+import serviceRoutes from "./modules/servicess/service.routes.js";
+import publicServiceRoutes from "./modules/servicess/public-service.routes.js";
 
 
 
@@ -103,7 +104,11 @@ app.use("/api/team-members", publicTeamMemberRoutes);
 app.use("/api/testimonials/admin", testimonialRoutes);
 app.use("/api/testimonials", publicTestimonialRoutes);
 
+// Admin Services
+app.use("/api/servicess/admin", serviceRoutes);
 
+// Public Services
+app.use("/api/servicess", publicServiceRoutes);
 
 // Health Check
 app.get("/api/health", (req, res) => {
