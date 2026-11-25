@@ -26,13 +26,18 @@ import teamMemberRoutes from "./modules/team-members/team-member.routes.js";
 import publicTeamMemberRoutes from "./modules/team-members/public-team-member.routes.js";
 import testimonialRoutes from "./modules/testimonials/testimonial.routes.js";
 import publicTestimonialRoutes from "./modules/testimonials/public-testimonial.routes.js";
-
 import serviceRoutes from "./modules/servicess/service.routes.js";
 import publicServiceRoutes from "./modules/servicess/public-service.routes.js";
-
 import whyChooseUsRoutes from "./modules/why-choose-us/why-choose-us.routes.js";
-
 import publicWhyChooseUsRoutes from "./modules/why-choose-us/public-why-choose-us.routes.js";
+import statisticsRoutes from "./modules/statistics/statistics.routes.js";
+import publicStatisticsRoutes from "./modules/statistics/public-statistics.routes.js";
+
+
+
+
+
+
 
 const app = express();
 
@@ -119,7 +124,8 @@ app.use("/api/why-choose-us/admin", whyChooseUsRoutes);
 // Why Choose Us Public APIs
 app.use("/api/why-choose-us", publicWhyChooseUsRoutes);
 
-
+app.use("/api/statistics/admin", statisticsRoutes);
+app.use("/api/statistics", publicStatisticsRoutes);
 
 
 // Health Check
