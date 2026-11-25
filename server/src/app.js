@@ -2,15 +2,12 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-
 // Middlewares
 import { globalApiLimiter } from "./middlewares/rate-limit.middleware.js";
-
 // Route imports
 import authRoutes from "./modules/auth/auth.routes.js";
 import contactRoutes from "./modules/contact/contact.routes.js";
 import usersRoutes from "./modules/users/users.routes.js";
-
 import blogCategoryRoutes from "./modules/blog-categories/blog-category.routes.js";
 import blogAdminRoutes from "./modules/blogs/blog.admin.routes.js";
 import blogTagRoutes from "./modules/blog-tags/blog-tag.routes.js";
@@ -26,7 +23,7 @@ import publicGalleryRoutes from "./modules/public-gallery/public-gallery.routes.
 import mediaCoverageRoutes from "./modules/media-coverage/media-coverage.routes.js";
 import publicMediaCoverageRoutes from "./modules/public-media-coverage/public-media-coverage.routes.js";
 import teamMemberRoutes from "./modules/team-members/team-member.routes.js";
-
+import publicTeamMemberRoutes from "./modules/team-members/public-team-member.routes.js";
 
 
 const app = express();
@@ -93,12 +90,15 @@ app.use("/api/project-categories", publicProjectCategoryRoutes);
 app.use("/api/gallery-categories/admin", galleryCategoryRoutes);
 app.use("/api/gallery/admin", galleryRoutes);
 
-
-
 app.use("/api/gallery", publicGalleryRoutes);
 app.use("/api/media-coverage/admin", mediaCoverageRoutes);
 app.use("/api/media-coverage", publicMediaCoverageRoutes);
 app.use("/api/team-members/admin", teamMemberRoutes);
+app.use("/api/team-members", publicTeamMemberRoutes);
+
+
+
+
 
 // Health Check
 app.get("/api/health", (req, res) => {
