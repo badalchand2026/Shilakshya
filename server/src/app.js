@@ -30,7 +30,9 @@ import publicTestimonialRoutes from "./modules/testimonials/public-testimonial.r
 import serviceRoutes from "./modules/servicess/service.routes.js";
 import publicServiceRoutes from "./modules/servicess/public-service.routes.js";
 
+import whyChooseUsRoutes from "./modules/why-choose-us/why-choose-us.routes.js";
 
+import publicWhyChooseUsRoutes from "./modules/why-choose-us/public-why-choose-us.routes.js";
 
 const app = express();
 
@@ -109,6 +111,16 @@ app.use("/api/servicess/admin", serviceRoutes);
 
 // Public Services
 app.use("/api/servicess", publicServiceRoutes);
+
+
+// Why Choose Us Admin APIs
+app.use("/api/why-choose-us/admin", whyChooseUsRoutes);
+
+// Why Choose Us Public APIs
+app.use("/api/why-choose-us", publicWhyChooseUsRoutes);
+
+
+
 
 // Health Check
 app.get("/api/health", (req, res) => {
