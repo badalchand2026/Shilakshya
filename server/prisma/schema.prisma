@@ -411,3 +411,18 @@ model Statistic {
   @@index([isPublished])
   @@map("statistics")
 }
+
+
+model ProcessStep {
+  id          String   @id @default(uuid()) @db.Uuid
+  title       String   @db.VarChar(200)
+  description String   @db.Text
+  position    Int      @default(0)
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([position])
+  @@index([isPublished])
+  @@map("process_steps")
+}

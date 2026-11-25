@@ -32,10 +32,8 @@ import whyChooseUsRoutes from "./modules/why-choose-us/why-choose-us.routes.js";
 import publicWhyChooseUsRoutes from "./modules/why-choose-us/public-why-choose-us.routes.js";
 import statisticsRoutes from "./modules/statistics/statistics.routes.js";
 import publicStatisticsRoutes from "./modules/statistics/public-statistics.routes.js";
-
-
-
-
+import processStepsRoutes from "./modules/process-steps/process-steps.routes.js";
+import publicProcessStepsRoutes from "./modules/process-steps/public-process-steps.routes.js";
 
 
 
@@ -126,6 +124,11 @@ app.use("/api/why-choose-us", publicWhyChooseUsRoutes);
 
 app.use("/api/statistics/admin", statisticsRoutes);
 app.use("/api/statistics", publicStatisticsRoutes);
+
+
+app.use("/api/process-steps/admin", processStepsRoutes);
+
+app.use("/api/process-steps", publicProcessStepsRoutes);
 
 
 // Health Check
