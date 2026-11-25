@@ -24,6 +24,11 @@ import mediaCoverageRoutes from "./modules/media-coverage/media-coverage.routes.
 import publicMediaCoverageRoutes from "./modules/public-media-coverage/public-media-coverage.routes.js";
 import teamMemberRoutes from "./modules/team-members/team-member.routes.js";
 import publicTeamMemberRoutes from "./modules/team-members/public-team-member.routes.js";
+import testimonialRoutes from "./modules/testimonials/testimonial.routes.js";
+import publicTestimonialRoutes from "./modules/testimonials/public-testimonial.routes.js";
+
+
+
 
 
 const app = express();
@@ -95,8 +100,8 @@ app.use("/api/media-coverage/admin", mediaCoverageRoutes);
 app.use("/api/media-coverage", publicMediaCoverageRoutes);
 app.use("/api/team-members/admin", teamMemberRoutes);
 app.use("/api/team-members", publicTeamMemberRoutes);
-
-
+app.use("/api/testimonials/admin", testimonialRoutes);
+app.use("/api/testimonials", publicTestimonialRoutes);
 
 
 
