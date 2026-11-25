@@ -24,7 +24,7 @@ import galleryCategoryRoutes from "./modules/gallery-categories/gallery-category
 import galleryRoutes from "./modules/gallery/gallery.routes.js";
 import publicGalleryRoutes from "./modules/public-gallery/public-gallery.routes.js";
 import mediaCoverageRoutes from "./modules/media-coverage/media-coverage.routes.js";
-
+import publicMediaCoverageRoutes from "./modules/public-media-coverage/public-media-coverage.routes.js";
 
 const app = express();
 
@@ -94,6 +94,7 @@ app.use("/api/gallery/admin", galleryRoutes);
 
 app.use("/api/gallery", publicGalleryRoutes);
 app.use("/api/media-coverage/admin", mediaCoverageRoutes);
+app.use("/api/media-coverage", publicMediaCoverageRoutes);
 
 
 // Health Check
