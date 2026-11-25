@@ -378,3 +378,20 @@ model Service {
   @@index([category])
   @@map("services")
 }
+
+model WhyChooseUs {
+  id          String   @id @default(uuid()) @db.Uuid
+  icon        String   @db.VarChar(100)
+  title       String   @db.VarChar(200)
+  description String   @db.Text
+  features    String[] @default([])
+  color       String   @db.VarChar(50)
+  sortOrder   Int      @default(0)
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([sortOrder])
+  @@index([isPublished])
+  @@map("why_choose_us")
+}
