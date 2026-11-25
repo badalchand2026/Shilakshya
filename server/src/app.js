@@ -25,6 +25,9 @@ import galleryRoutes from "./modules/gallery/gallery.routes.js";
 import publicGalleryRoutes from "./modules/public-gallery/public-gallery.routes.js";
 import mediaCoverageRoutes from "./modules/media-coverage/media-coverage.routes.js";
 import publicMediaCoverageRoutes from "./modules/public-media-coverage/public-media-coverage.routes.js";
+import teamMemberRoutes from "./modules/team-members/team-member.routes.js";
+
+
 
 const app = express();
 
@@ -95,13 +98,36 @@ app.use("/api/gallery/admin", galleryRoutes);
 app.use("/api/gallery", publicGalleryRoutes);
 app.use("/api/media-coverage/admin", mediaCoverageRoutes);
 app.use("/api/media-coverage", publicMediaCoverageRoutes);
-
+app.use("/api/team-members/admin", teamMemberRoutes);
 
 // Health Check
 app.get("/api/health", (req, res) => {
     return res.status(200).json({
         success: true,
         message: "Shilakshya backend is running successfully!",
+    });
+});
+
+// Global Error Handling Middleware
+app.use((error, req, res, next) => {
+    // If response has already been sent, pass error to Express
+    if (res.headersSent) {
+        return next(error);
+    }
+
+    const statusCode = error.statusCode || 500;
+
+    // Log unexpected server errors
+    if (statusCode >= 500) {
+        console.error("Global Error:", error);
+    }
+
+    return res.status(statusCode).json({
+        success: false,
+        message:
+            statusCode >= 500
+                ? "Internal server error."
+                : error.message || "Something went wrong.",
     });
 });
 
