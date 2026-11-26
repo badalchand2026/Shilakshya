@@ -169,10 +169,19 @@ export const getAdminDashboard = async (req, res) => {
 
 // refresh token rotation
 
+// Refresh access token
 export const refresh = async (req, res) => {
   try {
     // Get refresh token from HTTP-only cookie
     const refreshToken = req.cookies?.refreshToken;
+
+    // No refresh token means the user is not logged in
+    if (!refreshToken) {
+      return res.status(401).json({
+        success: false,
+        message: "No refresh token found. Please log in.",
+      });
+    }
 
     // Generate new tokens
     const result = await refreshUserToken(refreshToken);
@@ -194,11 +203,12 @@ export const refresh = async (req, res) => {
         user: result.user,
       },
     });
-
   } catch (error) {
-    console.error("Refresh token error:", error.message);
+    // Log only unexpected server errors
+    if (!error.statusCode) {
+      console.error("Refresh token error:", error.message);
+    }
 
-    // Remove invalid or rejected refresh cookie
     res.clearCookie("refreshToken", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -208,14 +218,12 @@ export const refresh = async (req, res) => {
 
     return res.status(error.statusCode || 500).json({
       success: false,
-      message:
-        error.statusCode
-          ? error.message
-          : "Something went wrong while refreshing the token",
+      message: error.statusCode
+        ? error.message
+        : "Something went wrong while refreshing the token",
     });
   }
 };
-
 
 //Logout
 
